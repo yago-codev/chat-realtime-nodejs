@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Chat com Node</title>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+      integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T"
+      crossorigin="anonymous"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12">
+          <form id="chat" class="form-chat jumbotron bg-dark pl-5 pr-5 mb-0">
+            <h1 class="text-white text-center mb-5">
+              Chat real-time com NodeJS
+            </h1>
+            <div class="messages mb-5"></div>
+            <input
+              type="text"
+              name="username"
+              placeholder="Digite seu usuário"
+              class="form-control p-4 mb-3"
+            />
+            <input
+              type="text"
+              name="message"
+              placeholder="Digite sua mensagem"
+              class="form-control p-4 mb-3"
+            />
+            <button class="btn btn-primary btn-block" type="submit">
+              Enviar
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script
+      src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+      integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+      integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+      integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
+      crossorigin="anonymous"
+    ></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+    <script type="text/javascript">
+      // aqui no front precisaremos nos conectar ao socket no backend
+      // como esse socket está no mesmo endereço(localhost:3000),
+      // poderemos usar a mesma url:
+      // o io que iremos atribuir a variável socket está vindo do script cdn
+      // para importarmos o socket
+      // dentro dessa função io nós precisamos passar a url que estaremos
+      // nos conectando, e a partir disso o front-end já estará ouvindo o
+      // socket(back-end)
+      let socket = io("http://localhost:3000");
+
+      // a função render vai renderizar as mensagens dentro da div messages
+      function renderMessage(message) {
+        $(".messages").append(
+          '<div class="message"><strong>' +
+            message.author +
+            "</strong>: " +
+            message.message +
+            "</div>"
+        );
+      }
+
+      // aqui nós estaremos recebendo as mensagens antigas armazenadas no array,
+      // tal quando configuramos no baackend com o evento previousMessages
+      socket.on("previousMessages", function(messages) {
+        // vamos percorrer o array de mensagens
+        for (message of messages) {
+          // vamos chamar a função renderMessage(),
+          // para renderizar nossa mensagem na div
+          renderMessage(message);
+        }
+      });
+
+      socket.on("receivedMessage", function(message) {
+        renderMessage(message);
+      });
+
+      // abaixo iremos verificar quando a mensagem for enviada.
+      // para isso iremos utilizar o método submit() do jQuery.
+      $("#chat").submit(function(event) {
+        // vamos interromper o submit
+        event.preventDefault();
+        // capturando o nome do usuário
+        let author = $("input[name=username]").val();
+        // capturando a mensagem do usuário
+        let message = $("input[name=message]").val();
+        // vamos verificar se o user e a message foram preenchidos
+        if (author.length && message.length) {
+          // iremos enviar um objeto como mensagem,
+          // pois não ficaremos restritos a enviar somente strings e integers
+          let messageObject = {
+            author: author,
+            message: message
+          };
+
+          // a seguir vamos renderizar a mensagem dentro da div
+          // utilizando o método renderMessage,
+          // passando o messaObject,
+          // que é a variável contendo o author e a mensagem.
+          renderMessage(messageObject);
+
+          // enviando a mensagem através do socket, usando a função emit()
+          // os parâmetros recebidos pela emit() são o evento,
+          // que pode ser nomeado de acordo com nossa escolha,
+          // e o segundo parâmetro é a mensagem que foi definida na variável
+          // messageObject
+          socket.emit("sendMessage", messageObject);
+        }
+      });
+    </script>
+  </body>
+</html>
